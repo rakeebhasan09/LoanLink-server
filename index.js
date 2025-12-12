@@ -60,11 +60,24 @@ async function run() {
 		// Loans Related API's
 		app.get("/loans", async (req, res) => {
 			const query = {};
-			const { email } = req.query;
+			const { email, searchText } = req.query;
 			if (email) {
 				query.managerEmail = email;
 			}
+			if (searchText) {
+				query.$or = [{ title: { $regex: searchText, $options: "i" } }];
+			}
 			const cursor = loansCollection.find(query).sort({ create_at: -1 });
+			const result = await cursor.toArray();
+			res.send(result);
+		});
+
+		app.get("/featured-loans", async (req, res) => {
+			const query = { showHome: "visibale" };
+			const cursor = loansCollection
+				.find(query)
+				.limit(3)
+				.sort({ create_at: -1 });
 			const result = await cursor.toArray();
 			res.send(result);
 		});
