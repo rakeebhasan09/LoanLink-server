@@ -5,7 +5,7 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // Middlewares
 app.use(cors());
@@ -69,10 +69,24 @@ async function run() {
 			res.send(result);
 		});
 
+		app.get("/loans/:loanID", async (req, res) => {
+			const { loanID } = req.params;
+			const query = { _id: new ObjectId(loanID) };
+			const result = await loansCollection.findOne(query);
+			res.send(result);
+		});
+
 		app.post("/loans", async (req, res) => {
 			const newLoan = req.body;
 			newLoan.create_at = new Date();
 			const result = await loansCollection.insertOne(newLoan);
+			res.send(result);
+		});
+
+		app.delete("/loans/:loanID", async (req, res) => {
+			const { loanID } = req.params;
+			const query = { _id: new ObjectId(loanID) };
+			const result = await loansCollection.deleteOne(query);
 			res.send(result);
 		});
 
