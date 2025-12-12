@@ -29,6 +29,33 @@ async function run() {
 	try {
 		// Connect the client to the server	(optional starting in v4.7)
 		await client.connect();
+
+		const db = client.db("loanlink_db");
+		const usersCollection = db.collection("users");
+
+		// Users Related API's
+		app.get("/users/:email/role", async (req, res) => {
+			const { email } = req.params;
+			const query = { email };
+			const user = await usersCollection.findOne(query);
+			res.send({ role: user?.role });
+		});
+
+		app.post("/users", async (req, res) => {
+			const userInfo = req.body;
+			userInfo.create_at = new Date();
+
+			const email = userInfo.email;
+
+			const userExsits = await usersCollection.findOne({ email });
+			if (userExsits) {
+				return res.send({ message: "User Exist" });
+			}
+
+			const result = await usersCollection.insertOne(userInfo);
+			res.send(result);
+		});
+
 		// Send a ping to confirm a successful connection
 		await client.db("admin").command({ ping: 1 });
 		console.log(
@@ -36,7 +63,7 @@ async function run() {
 		);
 	} finally {
 		// Ensures that the client will close when you finish/error
-		await client.close();
+		// await client.close();
 	}
 }
 run().catch(console.dir);
