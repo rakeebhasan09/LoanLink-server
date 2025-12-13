@@ -33,6 +33,7 @@ async function run() {
 		const db = client.db("loanlink_db");
 		const usersCollection = db.collection("users");
 		const loansCollection = db.collection("loans");
+		const loanApplicationsCollection = db.collection("loanApplications");
 
 		// Users Related API's
 		app.get("/users/:email/role", async (req, res) => {
@@ -100,6 +101,18 @@ async function run() {
 			const { loanID } = req.params;
 			const query = { _id: new ObjectId(loanID) };
 			const result = await loansCollection.deleteOne(query);
+			res.send(result);
+		});
+
+		// Loan Application Related API's
+		app.post("/loan-applications", async (req, res) => {
+			const applicationInfo = req.body;
+			applicationInfo.loanStatus = "pending";
+			applicationInfo.create_at = new Date();
+
+			const result = await loanApplicationsCollection.insertOne(
+				applicationInfo
+			);
 			res.send(result);
 		});
 
