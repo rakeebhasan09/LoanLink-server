@@ -135,10 +135,11 @@ async function run() {
 
 		app.patch("/loan-applications/:id", async (req, res) => {
 			const { id } = req.params;
+			const { status } = req.body;
 			const qurey = { _id: new ObjectId(id) };
 			const updatedDoc = {
 				$set: {
-					feeStatus: "approved",
+					feeStatus: status,
 					approvedAt: new Date(),
 				},
 			};
@@ -196,6 +197,7 @@ async function run() {
 					$set: {
 						feeStatus: "pending",
 						paid_at: new Date(),
+						transactionId: session.payment_intent,
 					},
 				};
 				const result = await loanApplicationsCollection.updateOne(
