@@ -133,6 +133,31 @@ async function run() {
 			res.send(result);
 		});
 
+		app.patch("/loan-applications/:id", async (req, res) => {
+			const { id } = req.params;
+			const qurey = { _id: new ObjectId(id) };
+			const updatedDoc = {
+				$set: {
+					feeStatus: "approved",
+					approvedAt: new Date(),
+				},
+			};
+
+			const result = await loanApplicationsCollection.updateOne(
+				qurey,
+				updatedDoc
+			);
+
+			res.send(result);
+		});
+
+		app.delete("/loan-applications/:id", async (req, res) => {
+			const { id } = req.params;
+			const query = { _id: new ObjectId(id) };
+			const result = await loanApplicationsCollection.deleteOne(query);
+			res.send(result);
+		});
+
 		// Payment Related API's
 		app.post("/payment-checkout-session", async (req, res) => {
 			const paymentInfo = req.body;
