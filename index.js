@@ -4,6 +4,7 @@ const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const stripe = require("stripe")(process.env.PAYMENT_SECRET);
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -105,15 +106,82 @@ async function run() {
 		});
 
 		// Loan Application Related API's
+		app.get("/loan-applications", async (req, res) => {
+			const qurey = {};
+			const { email, feeStatus } = req.query;
+			if (email) {
+				qurey.email = email;
+			}
+			if (feeStatus) {
+				qurey.feeStatus = feeStatus;
+			}
+			const cursor = loanApplicationsCollection
+				.find(qurey)
+				.sort({ create_at: -1 });
+
+			const result = await cursor.toArray();
+			res.send(result);
+		});
+
 		app.post("/loan-applications", async (req, res) => {
 			const applicationInfo = req.body;
-			applicationInfo.loanStatus = "pending";
+			applicationInfo.feeStatus = "unpaid";
 			applicationInfo.create_at = new Date();
-
 			const result = await loanApplicationsCollection.insertOne(
 				applicationInfo
 			);
 			res.send(result);
+		});
+
+		// Payment Related API's
+		app.post("/payment-checkout-session", async (req, res) => {
+			const paymentInfo = req.body;
+			console.log(paymentInfo);
+			const session = await stripe.checkout.sessions.create({
+				line_items: [
+					{
+						price_data: {
+							currency: "USD",
+							product_data: {
+								name: "Loan Processing Fee", // any name you want
+							},
+							unit_amount: 1000,
+						},
+						quantity: 1,
+					},
+				],
+				metadata: { loanId: paymentInfo.loanId },
+				mode: "payment",
+				customer_email: paymentInfo.userEmail,
+				success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+				cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancel`,
+			});
+
+			res.send({ url: session.url });
+		});
+
+		app.patch("/payment-success", async (req, res) => {
+			const sessionId = req.query.session_id;
+			const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+			if (session.payment_status === "paid") {
+				const id = session.metadata.loanId;
+				const query = { _id: new ObjectId(id) };
+				const update = {
+					$set: {
+						feeStatus: "pending",
+						paid_at: new Date(),
+					},
+				};
+				const result = await loanApplicationsCollection.updateOne(
+					query,
+					update
+				);
+
+				res.send(result);
+			}
+
+			res.send({ success: false });
 		});
 
 		// Send a ping to confirm a successful connection
