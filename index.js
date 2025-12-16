@@ -75,7 +75,7 @@ async function run() {
 		});
 
 		app.get("/featured-loans", async (req, res) => {
-			const query = { showHome: "visibale" };
+			const query = { showHome: true };
 			const cursor = loansCollection
 				.find(query)
 				.limit(3)
