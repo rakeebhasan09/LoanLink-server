@@ -37,6 +37,18 @@ async function run() {
 		const loanApplicationsCollection = db.collection("loanApplications");
 
 		// Users Related API's
+		app.get("/users", async (req, res) => {
+			const query = {};
+			const { searchText } = req.query;
+			if (searchText) {
+				query.$or = [
+					{ displayName: { $regex: searchText, $options: "i" } },
+				];
+			}
+			const cursor = usersCollection.find(query).sort({ create_at: -1 });
+			const result = await cursor.toArray();
+			res.send(result);
+		});
 		app.get("/users/:email/role", async (req, res) => {
 			const { email } = req.params;
 			const query = { email };
@@ -46,6 +58,7 @@ async function run() {
 
 		app.post("/users", async (req, res) => {
 			const userInfo = req.body;
+			userInfo.userStatus = "pending";
 			userInfo.create_at = new Date();
 
 			const email = userInfo.email;
@@ -121,12 +134,18 @@ async function run() {
 		// Loan Application Related API's
 		app.get("/loan-applications", async (req, res) => {
 			const qurey = {};
-			const { email, feeStatus } = req.query;
+			const { email, feeStatus, searchText } = req.query;
+
 			if (email) {
 				qurey.email = email;
 			}
 			if (feeStatus) {
 				qurey.feeStatus = feeStatus;
+			}
+			if (searchText) {
+				qurey.$or = [
+					{ feeStatus: { $regex: searchText, $options: "i" } },
+				];
 			}
 			const cursor = loanApplicationsCollection
 				.find(qurey)
