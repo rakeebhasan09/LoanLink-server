@@ -36,19 +36,37 @@ async function run() {
 		const loansCollection = db.collection("loans");
 		const loanApplicationsCollection = db.collection("loanApplications");
 
-		// Users Related API's
 		app.get("/users", async (req, res) => {
 			const query = {};
-			const { searchText } = req.query;
+			const searchText = req.query.searchText || "";
+			const page = parseInt(req.query.page) || 1;
+			const limit = parseInt(req.query.limit) || 5;
+
 			if (searchText) {
 				query.$or = [
 					{ displayName: { $regex: searchText, $options: "i" } },
 				];
 			}
-			const cursor = usersCollection.find(query).sort({ create_at: -1 });
-			const result = await cursor.toArray();
-			res.send(result);
+
+			const skip = (page - 1) * limit;
+
+			const users = await usersCollection
+				.find(query)
+				.sort({ created_at: -1 })
+				.skip(skip)
+				.limit(limit)
+				.toArray();
+
+			const totalUsers = await usersCollection.countDocuments(query);
+
+			res.send({
+				users,
+				totalUsers,
+				totalPages: Math.ceil(totalUsers / limit),
+				currentPage: page,
+			});
 		});
+
 		app.get("/users/:email/role", async (req, res) => {
 			const { email } = req.params;
 			const query = { email };
