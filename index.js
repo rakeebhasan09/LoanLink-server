@@ -91,6 +91,19 @@ async function run() {
 			res.send(result);
 		});
 
+		app.patch("/loans/:loanID", async (req, res) => {
+			const { loanID } = req.params;
+			const newStatus = req.body;
+			const query = { _id: new ObjectId(loanID) };
+			const updatedDoc = {
+				$set: {
+					showHome: newStatus.showHome,
+				},
+			};
+			const result = await loansCollection.updateOne(query, updatedDoc);
+			res.send(result);
+		});
+
 		app.post("/loans", async (req, res) => {
 			const newLoan = req.body;
 			newLoan.create_at = new Date();
