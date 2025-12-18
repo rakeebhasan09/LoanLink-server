@@ -144,7 +144,7 @@ async function run() {
 			const query = { showHome: true };
 			const cursor = loansCollection
 				.find(query)
-				.limit(3)
+				.limit(6)
 				.sort({ create_at: -1 });
 			const result = await cursor.toArray();
 			res.send(result);
