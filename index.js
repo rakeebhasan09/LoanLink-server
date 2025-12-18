@@ -52,9 +52,9 @@ async function run() {
 
 			const users = await usersCollection
 				.find(query)
-				.sort({ created_at: -1 })
 				.skip(skip)
 				.limit(limit)
+				.sort({ create_at: -1 })
 				.toArray();
 
 			const totalUsers = await usersCollection.countDocuments(query);
@@ -71,7 +71,42 @@ async function run() {
 			const { email } = req.params;
 			const query = { email };
 			const user = await usersCollection.findOne(query);
-			res.send({ role: user?.role });
+			res.send({ role: user?.role, userStatus: user?.userStatus });
+		});
+
+		app.get("/users/:userId", async (req, res) => {
+			const { userId } = req.params;
+			const query = { _id: new ObjectId(userId) };
+			const result = await usersCollection.findOne(query);
+			res.send(result);
+		});
+
+		app.patch("/users/:userId", async (req, res) => {
+			const { userId } = req.params;
+			const newStatus = req.body;
+			const query = { _id: new ObjectId(userId) };
+			const updateDoc = {
+				$set: {
+					userStatus: newStatus.userStatus,
+				},
+			};
+			const result = await usersCollection.updateOne(query, updateDoc);
+			res.send(result);
+		});
+
+		app.patch("/users/suspended/:userId", async (req, res) => {
+			const { userId } = req.params;
+			const updateInfo = req.body;
+			const query = { _id: new ObjectId(userId) };
+			const updatedDoc = {
+				$set: {
+					userStatus: updateInfo.userStatus,
+					suspendReason: updateInfo.suspendReason,
+					suspendFeedback: updateInfo.suspendFeedback,
+				},
+			};
+			const result = await usersCollection.updateOne(query, updatedDoc);
+			res.send(result);
 		});
 
 		app.post("/users", async (req, res) => {
