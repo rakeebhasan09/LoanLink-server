@@ -29,7 +29,7 @@ const client = new MongoClient(uri, {
 async function run() {
 	try {
 		// Connect the client to the server	(optional starting in v4.7)
-		await client.connect();
+		// await client.connect();
 
 		const db = client.db("loanlink_db");
 		const usersCollection = db.collection("users");
@@ -128,12 +128,15 @@ async function run() {
 		// Loans Related API's
 		app.get("/loans", async (req, res) => {
 			const query = {};
-			const { email, searchText } = req.query;
+			const { email, searchText, searchLoan } = req.query;
 			if (email) {
 				query.managerEmail = email;
 			}
 			if (searchText) {
 				query.$or = [{ title: { $regex: searchText, $options: "i" } }];
+			}
+			if (searchLoan) {
+				query.$or = [{ title: { $regex: searchLoan, $options: "i" } }];
 			}
 			const cursor = loansCollection.find(query).sort({ create_at: -1 });
 			const result = await cursor.toArray();
@@ -297,10 +300,10 @@ async function run() {
 		});
 
 		// Send a ping to confirm a successful connection
-		await client.db("admin").command({ ping: 1 });
-		console.log(
-			"Pinged your deployment. You successfully connected to MongoDB!"
-		);
+		// await client.db("admin").command({ ping: 1 });
+		// console.log(
+		// 	"Pinged your deployment. You successfully connected to MongoDB!"
+		// );
 	} finally {
 		// Ensures that the client will close when you finish/error
 		// await client.close();
